@@ -88,7 +88,7 @@ Der Preis der Optimalität ist Aufwand: das Verfahren durchsucht ein Vielfaches 
 )
 st.caption(
     "Anders als die Fall-Demos im Portfolio, die an einem Anwendungsfall mehrere Verfahren vergleichen, zeigt diese Demo - drittes Stück der Matching-Linie der \"Konzepte\"-Reihe, Fortsetzung der Verbesserungswege-Demo - **ein** Verfahren an einem wachsenden Beispiel. "
-    "Die Schwächen dieses Stücks sind die Ansatzpunkte der nächsten: **Auktionsalgorithmus** (dezentral, mit Geboten), **Blossom** und **Gewichteter Blossom** (allgemeine Graphen), **Gale–Shapley** (Vorlieben statt Kosten) und **Online-Matching** - noch nicht gebaut. "
+    "Die Schwächen dieses Stücks sind die Ansatzpunkte der nächsten: **Auktionsalgorithmus** (dezentral, mit Geboten), **Blossom** und **Gewichteter Blossom** (allgemeine Graphen), **Gale–Shapley** (Vorlieben statt Kosten) und **Online-Matching** - alle inzwischen gebaut. "
     "Die Referenz \"Optimum\" kommt aus der kleinen exakten Lösung der Greedy-Matching-Demo, die hier nur zur Gegenprobe dient."
 )
 
@@ -345,7 +345,7 @@ st.markdown(
 | **Der Aufwand ist gleichgültig** | Die Ungarische Methode durchsucht ein Vielfaches der Kanten der Verbesserungswege: bei Reichweite 40 rund 12-mal so viele wie ab Greedy, bei 40 Fahrzeugen rund 54-mal so viele; mit der Kartengröße wächst sie etwa quadratisch. | Beschleunigungen (Hopcroft–Karp für die Paarzahl, Skalierungsverfahren für die Kosten) |
 """
 )
-st.caption("Die Nachbarn der Matching-Linie (noch nicht gebaut): Hopcroft–Karp, Auktionsalgorithmus, Blossom, Gewichteter Blossom, Gale–Shapley, Stabile Mitbewohner und Online-Matching. Bereits gebaut: die Wurzel (Greedy-Matching) und die Verbesserungswege.")
+st.caption("Die Matching-Linie ist inzwischen vollständig gebaut (13 Stücke): die Wurzel (Greedy-Matching), die Verbesserungswege, Hopcroft–Karp, Auktionsalgorithmus, Blossom, Gewichteter Blossom, Gale–Shapley, Stabile Mitbewohner, Krankenhaus-Zulassung, Top Trading Cycles, Nierentausch und Online-Matching.")
 
 st.markdown("---")
 
