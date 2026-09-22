@@ -1,5 +1,7 @@
 # Ungarische Methode – die billigste unter den größtmöglichen Zuordnungen – Streamlit-Demo
 
+**[→ Demo live ausprobieren](https://sebastianhanisch-hungarian-demo.streamlit.app/)**
+
 Drittes Stück der **Matching-Linie** der "Konzepte"-Reihe für die Website "Sebastian Hanisch – Operations Research und Machine Learning", Fortsetzung der [Verbesserungswege-Demo](https://github.com/sebastian-hanisch/augmenting-path-demo):
 anders als die Fall-Demos im Portfolio (ein Anwendungsfall, mehrere Verfahren im Vergleich) zeigt diese Demo **ein** Verfahren – die **Ungarische Methode** (Successive Shortest Paths mit Potenzialen) – an einem wachsenden Beispiel.
 Verbesserungswege machen die Paarzahl größtmöglich, sind aber **kostenblind**. Die Ungarische Methode klappt in jeder Runde den **billigsten** Verbesserungsweg um und hält dabei **Preise** für alle Fahrzeuge und Aufträge, die zeigen, warum kein billigeres Matching mit gleich vielen Paaren existiert.
