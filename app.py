@@ -351,7 +351,7 @@ st.markdown(
 | **Der Aufwand ist gleichgültig** | Die Ungarische Methode durchsucht ein Vielfaches der Kanten der Verbesserungswege: bei Reichweite 40 rund 12-mal so viele wie ab Greedy, bei 40 Fahrzeugen rund 54-mal so viele; mit der Kartengröße wächst sie etwa quadratisch. | Beschleunigungen (Hopcroft–Karp für die Paarzahl, Skalierungsverfahren für die Kosten) |
 """
 )
-st.caption("Die Matching-Linie ist inzwischen vollständig gebaut (13 Stücke): die Wurzel (Greedy-Matching), die Verbesserungswege, Hopcroft–Karp, Auktionsalgorithmus, Blossom, Gewichteter Blossom, Gale–Shapley, Stabile Mitbewohner, Krankenhaus-Zulassung, Top Trading Cycles, Nierentausch und Online-Matching.")
+st.caption("Die Matching-Linie ist inzwischen vollständig gebaut (13 Stücke): die Wurzel (Greedy-Matching), die Verbesserungswege, Hopcroft–Karp, diese Demo, Auktionsalgorithmus, Blossom, Gewichteter Blossom, Gale–Shapley, Stabile Mitbewohner, Krankenhaus-Zulassung, Top Trading Cycles, Nierentausch und Online-Matching.")
 
 st.markdown("---")
 
@@ -366,7 +366,7 @@ with st.expander("📐 Mathematische Formulierung"):
 
 **Potenziale.** $\pi$ auf allen Ecken, $\pi_s=0$, $\pi_t=P$. Reduzierte Kosten $r=w+\pi_a-\pi_b\ge 0$ auf allen Restkanten. Jede Runde: ein Dijkstra von allen freien Fahrzeugen mit Abstand 0 auf $r$, Abbruch beim ersten freien Auftrag (Abstand $d_t$). Dann
 $$\pi_x \mathrel{+}= \min(d_x,\,d_t),\qquad P \mathrel{+}= d_t,\qquad W = d_t + P_{\text{alt}},$$
-mit $\min(d_x,d_t)=d_t$ für alle nicht festgelegten Ecken. Das ist Johnsons Umgewichtung, nach jedem Umklappen neu gepflegt. Invarianten: freie Fahrzeuge haben $\pi=0$, freie Aufträge $\pi=P$, gewählte Kanten sind straff, alle Restkanten haben $r\ge 0$, und $P$ ist die Grenzkosten des letzten Paars.
+mit $\min(d_x,d_t)=d_t$ für alle nicht festgelegten Ecken. Das ist Johnsons Umgewichtung, nach jedem Umklappen neu gepflegt. Invarianten: freie Fahrzeuge haben $\pi=0$, freie Aufträge $\pi=P$, gewählte Kanten sind straff, alle Restkanten haben $r\ge 0$, und $P$ sind die Grenzkosten des letzten Paars.
 
 **Preise.** Mit $p_j=\pi_j$ (Preis des Auftrags) und $g_i=\pi_i$ (Gewinn des Fahrzeugs) lautet die Zulässigkeit $p_j-g_i\le c_{ij}$ für alle möglichen Paare, mit Gleichheit auf gewählten. Das ist das duale Problem der Zuordnung; $u=-g$, $v=p$ ergibt $u_i+v_j\le c_{ij}$.
 
@@ -384,6 +384,6 @@ st.markdown("---")
 
 st.caption(
     "Diese Demo ist Teil des Portfolios von [Sebastian Hanisch](https://sebastianhanisch.net) – "
-    "Operations Research und Machine Learning. Interesse an einer maßgeschneiderten Lösung für "
-    "Ihr Unternehmen? [Kontakt aufnehmen](https://sebastianhanisch.net/kontakt.html)"
+    "Operations Research und Machine Learning ([Über mich](https://sebastianhanisch.net/ueber-mich.html)). "
+    "Mehr zur Reihe: [Matching: von Greedy bis Nierentausch](https://sebastianhanisch.net/konzepte-matching.html)."
 )
