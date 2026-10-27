@@ -9,7 +9,7 @@ Ziel ist lexikografisch: erst möglichst viele Paare, dann möglichst geringe Ko
 
 **Zwei Sichten auf dieselbe Rechnung** (umschaltbar): **Preise** (Aufträge haben Preise, Fahrzeuge Gewinne, jede Runde hebt Preise an) und **Kürzeste Wege** (jede Runde ist ein Dijkstra auf reduzierten Kosten; das Potenzial steigt um min(Abstand, Abstand zum Ziel) – die Umgewichtung aus Johnsons Verfahren, nach jedem Umklappen neu gepflegt). Beide lesen dieselben Rundendaten, sind also immer synchron.
 
-**Einordnung in die Reihe (die Kanten des Graphen):** dieses Stück behebt die Kostenblindheit der Verbesserungswege. Seine eigenen Schwächen sind die Ansatzpunkte der nächsten: die Rechnung ist zentral und braucht alle Kosten (**Auktionsalgorithmus**), es gibt nur zwei getrennte Seiten (**Blossom → Gewichteter Blossom**), Kosten statt Vorlieben (**Gale–Shapley**), alles ist vorab bekannt (**Online-Matching**).
+**Einordnung in die Reihe (die Kanten des Graphen):** dieses Stück behebt die Kostenblindheit der Verbesserungswege. Seine eigenen Schwächen sind die Ansatzpunkte der nächsten: die Rechnung ist zentral und braucht alle Kosten (**Auktionsalgorithmus**), der Graph hat nur zwei Seiten, er ist bipartit (**Blossom → Gewichteter Blossom** für Graphen ohne diese Annahme), Kosten statt Vorlieben (**Gale–Shapley**), alles ist vorab bekannt (**Online-Matching**).
 ```
 greedy-matching-demo (Wurzel: eine gewählte Zuordnung bleibt)                     [gebaut]
   ├─ augmenting-path-demo (Verbesserungswege: Paare optimal, Kosten blind)        [gebaut]
@@ -49,6 +49,7 @@ Jede hier genannte Zahl ist in `tests/test_claims.py` über die 100 festen Karte
 
 - **Die Ungarische Methode in Aktion:** Schritt-Slider und ▶️ über die Runden, umschaltbar zwischen den beiden Sichten; links der Zustand vor der Runde, rechts danach; am Ende der **Beweis** (Prüftabelle C1–C5 mit echten Zahlen und die Kostenidentität als Gleichung). Darunter die Grenzkostenkurve.
 - **Optimal – und was kostet das?** Ergebnis gegen die Referenz, Vergleichstabelle (Greedy, Verbesserungswege in drei Varianten, Ungarisch), Verteilung über 100 feste Karten, Aufwandstabelle, Sweep über die Reichweite und Aufwand-Experiment auf Abruf.
+- **Zwei Darstellungen desselben Graphen:** als Karte oder als **bipartiter Graph** (Fahrzeuge links, Aufträge rechts, jede Kante wechselt die Seite); Preise, Wege und Paare sind in beiden dieselben.
 - **Feste Lehrbuchkarten** (2 × 2, Pfad aus vier Punkten, lange Kette) und zufällige Karten; **Wo die Annahmen enden:** welches spätere Stück an welcher Schwäche ansetzt.
 
 ## Modell und Verfahren

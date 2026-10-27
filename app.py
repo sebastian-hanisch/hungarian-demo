@@ -96,9 +96,11 @@ st.caption(
 with st.expander("So funktioniert die Ungarische Methode", expanded=True):
     st.markdown(
         """
-1. **Preise:** jeder Auftrag hat einen *Preis* p, jedes Fahrzeug einen *Gewinn* g (am Anfang alle 0). Für jedes mögliche Paar gilt: Preis − Gewinn ≤ Kosten; bei gewählten Paaren gilt Gleichheit („straff“). Ein Fahrzeug „will“ den Auftrag mit der besten Prämie, Preis minus Anfahrtskosten.
+**Der Graph.** Fahrzeuge und Aufträge sind die **Ecken**, ein mögliches Paar (das Fahrzeug erreicht den Auftrag in der Reichweite) ist eine **Kante**. Es gibt **zwei Seiten**: Kanten laufen immer von einem Fahrzeug zu einem Auftrag, nie von Fahrzeug zu Fahrzeug oder von Auftrag zu Auftrag. Einen solchen Graphen nennt man **bipartit**. Auf der Karte liegen beide Seiten gemischt; unter **Darstellung → Zwei Seiten** stehen die Fahrzeuge links und die Aufträge rechts, und man sieht, dass jede Kante die Seite wechselt.
+
+1. **Preise:** jeder Auftrag hat einen *Preis* p, jedes Fahrzeug einen *Gewinn* g (am Anfang alle 0). Für jedes mögliche Paar gilt: Preis − Gewinn ≤ Kosten; bei gewählten Paaren gilt Gleichheit („straff“). Ein Fahrzeug „will“ den Auftrag, bei dem Preis minus Anfahrtskosten am größten ist.
 2. **Eine Runde:** von allen freien Fahrzeugen aus wird der **billigste Verbesserungsweg** zu einem freien Auftrag gesucht - ein Dijkstra auf den *reduzierten* Kosten Kosten + g − p, die nie negativ sind. Die Suche endet, sobald ein freier Auftrag erreicht ist.
-3. **Preise steigen:** jede festgelegte Ecke steigt um ihren Abstand, alle anderen um den Abstand des Ziels (**min(Abstand, Abstand zum Ziel)**). Danach sind gewählte Kanten weiter straff und keine Kante hat negativen Schlupf.
+3. **Preise steigen:** jede Ecke, deren Abstand die Suche schon festgelegt hat, steigt um ihren Abstand, alle anderen um den Abstand des Ziels (**min(Abstand, Abstand zum Ziel)**). Danach sind gewählte Kanten weiter straff und keine Kante hat negativen Schlupf.
 4. **Umklappen:** wie bei den Verbesserungswegen; jede Runde kostet **Grenzkosten** - so viel mehr, wie das neue Paar kostet - und diese steigen von Runde zu Runde.
 5. **Beweis:** wenn kein freier Auftrag mehr erreichbar ist, belegen die Preise, dass kein Matching mit gleich vielen Paaren billiger ist (Dualzulässigkeit, keine negativen Tauschkreise).
         """
@@ -170,7 +172,7 @@ st.markdown("## 🎯 Die Ungarische Methode in Aktion")
 if st.session_state.get("hu_step_owner") != params:
     st.session_state["hu_step"] = n_rounds
     st.session_state["hu_step_owner"] = params
-step_col, view_col, play_col = st.columns([4, 3, 2])
+step_col, view_col, layout_col, play_col = st.columns([4, 3, 3, 2])
 with step_col:
     if n_rounds > 0:
         step = st.slider("Runde", 0, n_rounds, key="hu_step", help="Wie viele Runden schon umgeklappt sind. Bei 0 ist der Start zu sehen, mit der Suche der ersten Runde; ganz rechts das fertige Matching und der Beweis.")
@@ -180,9 +182,12 @@ with step_col:
 with view_col:
     view = st.radio("Ansicht", list(C.VIEW_LABELS), key="view_radio", format_func=lambda k: C.VIEW_LABELS[k], horizontal=True,
                     help="Dieselbe Rechnung, zwei Lesarten. Preise: Aufträge haben Preise, Fahrzeuge Gewinne, jede Runde hebt Preise an. Kürzeste Wege: jede Runde ist ein Dijkstra auf reduzierten Kosten, und das Potenzial steigt um min(Abstand, Abstand zum Ziel).")
+with layout_col:
+    layout = st.radio("Darstellung", list(C.LAYOUT_LABELS), key="layout_radio", format_func=lambda k: C.LAYOUT_LABELS[k], horizontal=True,
+                      help="Karte: Fahrzeuge und Aufträge liegen dort, wo sie auf der Karte sind. Zwei Seiten: dieselben Fahrzeuge links, dieselben Aufträge rechts, jede Kante läuft von einer Seite zur anderen - ein bipartiter Graph. Preise, Wege und Paare sind in beiden Darstellungen dieselben.")
 with play_col:
     auto_play = st.button("▶️ Abspielen", width="stretch", disabled=n_rounds == 0)
-sync_query_params({"net_select": net_key, "view_radio": view, "n_slider": int(n), "m_slider": int(m), "reach_slider": int(reach), "ballung_slider": int(ballung), "seed_input": int(seed)})
+sync_query_params({"net_select": net_key, "view_radio": view, "layout_radio": layout, "n_slider": int(n), "m_slider": int(m), "reach_slider": int(reach), "ballung_slider": int(ballung), "seed_input": int(seed)})
 view_slot = st.empty()
 cum_before = [0] + [sum(res.marginal[:k]) for k in range(1, n_rounds + 1)]
 
@@ -209,13 +214,13 @@ def _render(k):
             rnd = res.rounds[k]
             if view == "prices":
                 c1.markdown(f"**Vor Runde {k + 1}** - Preise und Gewinne, der billigste Weg ({rnd.length} Kanten)")
-                c1.plotly_chart(build_price_map(sc, res.states[k], rnd.pi_v_before, rnd.pi_o_before, res.p, rnd.path), width="stretch", key=f"map_before_prices_{k}")
+                c1.plotly_chart(build_price_map(sc, res.states[k], rnd.pi_v_before, rnd.pi_o_before, res.p, rnd.path, layout=layout), width="stretch", key=f"map_before_prices_{k}")
                 c2.markdown(f"**Nach Runde {k + 1}** - Preise steigen (Zahl an der Ecke: Anstieg), {rnd.pairs_after} Paare")
             else:
                 c1.markdown(f"**Vor Runde {k + 1}** - Dijkstra: Zahl an der Ecke = reduzierter Abstand, Farbe = Reihenfolge des Festlegens")
-                c1.plotly_chart(build_path_map(sc, res.states[k], rnd), width="stretch", key=f"map_before_paths_{k}")
+                c1.plotly_chart(build_path_map(sc, res.states[k], rnd, layout=layout), width="stretch", key=f"map_before_paths_{k}")
                 c2.markdown(f"**Nach Runde {k + 1}** - Potenziale steigen um min(Abstand, {rnd.d_t}), {rnd.pairs_after} Paare")
-            c2.plotly_chart(build_delta_map(sc, res.states[k + 1], rnd), width="stretch", key=f"map_after_{k}")
+            c2.plotly_chart(build_delta_map(sc, res.states[k + 1], rnd, layout=layout), width="stretch", key=f"map_after_{k}")
             st.caption(f"Weg dieser Runde: {_path_text(rnd.path)} (+ wird gewählt, − wird freigegeben). Die Suche hat {rnd.scanned} Kanten durchsucht und {len(rnd.settled)} Ecken festgelegt; "
                        f"das neue Paar kostet **{rnd.w} Minuten zusätzlich** (Grenzkosten, Abstand zum Ziel {rnd.d_t}, Preisdecke P: {rnd.p_before} → {rnd.p_after}).")
             if view == "paths":
@@ -228,7 +233,7 @@ def _render(k):
                     st.caption(f"Die ersten {len(shown)} von {len(rnd.settled)} festgelegten Ecken; alle übrigen Ecken steigen um den Abstand des Ziels ({rnd.d_t}).")
         else:
             c1.markdown(f"**Ergebnis** - {res.count} Paare, {res.cost} Minuten, Preise und Gewinne am Ende")
-            c1.plotly_chart(build_price_map(sc, res.pairs, res.pi_v, res.pi_o, res.p), width="stretch", key=f"map_result_{k}")
+            c1.plotly_chart(build_price_map(sc, res.pairs, res.pi_v, res.pi_o, res.p, layout=layout), width="stretch", key=f"map_result_{k}")
             c2.markdown("**Beweis:** die Preise belegen die Optimalität")
             c2.table(_cert_table())
             st.caption("Dunkle Linien sind straffe Kanten (Schlupf 0), blaue die gewählten. Weil kein mögliches Paar einen negativen Schlupf hat und alle gewählten straff sind, gibt es keinen Tauschkreis, der die Kosten senkt; "
@@ -245,7 +250,7 @@ else:
 
 if n_rounds > 0:
     st.plotly_chart(build_marginal(res.marginal), width="stretch", key="marginal_chart")
-st.caption("Quadrate sind Fahrzeuge, Kreise Aufträge; ohne Partner nur als Umriss. Preise-Sicht: Auftragspreise und Fahrzeuggewinne (Größe und Farbe); freie Aufträge stehen an der Decke P. "
+st.caption("Quadrate sind Fahrzeuge, Kreise Aufträge; ohne Partner nur als Umriss. In der Darstellung „Zwei Seiten“ stehen die Fahrzeuge links und die Aufträge rechts (innerhalb jeder Spalte nach Lage der möglichen Partner geordnet, damit sich wenige Kanten kreuzen); die Zahlen sind dieselben wie auf der Karte. Preise-Sicht: Auftragspreise und Fahrzeuggewinne (Größe und Farbe); freie Aufträge stehen an der Decke P. "
            "Die Grenzkosten steigen von Runde zu Runde: das letzte Paar ist das teuerste.")
 
 st.markdown("---")
@@ -345,7 +350,7 @@ st.markdown(
 | Annahme | Was passiert, wenn sie verletzt ist | Wer setzt an |
 |---|---|---|
 | **Es gibt einen Rechner, der alle Kosten kennt** | Die Preise entstehen in einer zentralen Rechnung über die ganze Kostenmatrix. Fahrzeuge, die nur ihre eigenen Kosten kennen und selbst bieten, kommen zum gleichen Ergebnis nur mit Geboten und einer Toleranz. | **Auktionsalgorithmus**: dezentral, mit Geboten und ε |
-| **Es gibt zwei getrennte Seiten** | Fahrzeuge und Aufträge bilden zwei Gruppen. Sollen sich Fahrer untereinander paaren, gibt es Zyklen ungerader Länge, die diese Suche nicht behandelt. | **Blossom**, dann **Gewichteter Blossom** |
+| **Der Graph ist bipartit (zwei Seiten)** | Kanten gibt es nur zwischen Fahrzeugen und Aufträgen. Soll dagegen jeder mit jedem gepaart werden können, etwa zwei Fahrer, die gemeinsam eine Fahrt übernehmen, kann es Kreise ungerader Länge geben (drei Fahrer, die einander alle erreichen); die Wegsuche dieser Demo behandelt sie nicht. | **Blossom**, dann **Gewichteter Blossom** |
 | **Nur die Summe der Kosten zählt** | Die Ungarische Methode minimiert die Gesamtkosten und fragt nicht, ob ein Fahrzeug lieber einen anderen Auftrag hätte. Haben beide Seiten Vorlieben, ist ein stabiles Ergebnis oft teurer als dieses Optimum. | **Gale–Shapley**: stabile Paarungen, der Preis der Stabilität gegen dieses Optimum |
 | **Alles ist vorab bekannt** | Aufträge kommen hier alle vor der Rechnung an. Kommen sie nacheinander und sind schon zugesagt, darf nicht mehr umgeklappt werden. | **Online-Matching** |
 | **Der Aufwand ist gleichgültig** | Die Ungarische Methode durchsucht ein Vielfaches der Kanten der Verbesserungswege: bei Reichweite 40 rund 12-mal so viele wie ab Greedy, bei 40 Fahrzeugen rund 54-mal so viele; mit der Kartengröße wächst sie etwa quadratisch. | Beschleunigungen (Hopcroft–Karp für die Paarzahl, Skalierungsverfahren für die Kosten) |

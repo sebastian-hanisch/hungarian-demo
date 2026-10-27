@@ -1,6 +1,8 @@
 """Plotly-Abbildungen der Ungarischen Methode: Preise, Kürzeste Wege (Dijkstra), Grenzkosten, Verteilungen, Reichweite-Sweep und Aufwand.
 Achsen sind gesperrt (fixedrange), damit Touch-Geräte beim Scrollen nicht zoomen. Punkte auf einer Geraden werden mit Bögen gezeichnet."""
 
+from dataclasses import replace
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
@@ -16,6 +18,50 @@ def lock_axes(fig):
 def _base(fig, height):
     fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=10), legend=dict(orientation="h", y=-0.08), plot_bgcolor="rgba(0,0,0,0)")
     return lock_axes(fig)
+
+
+def _two_sided_order(sc, sweeps=4):
+    """Reihenfolge der Ecken in den beiden Spalten (oben nach unten): Start nach Kartenlage, dann abwechselnd jede Seite nach dem Mittel der Plätze ihrer möglichen Partner (weniger Kreuzungen)."""
+    vo = sorted(range(sc.n), key=lambda i: (sc.vehicles[i][1], sc.vehicles[i][0], i))
+    oo = sorted(range(sc.m), key=lambda j: (sc.orders[j][1], sc.orders[j][0], j))
+    for _ in range(sweeps):
+        pv = {i: r for r, i in enumerate(vo)}
+        keys = {}
+        for j in oo:
+            nb = [pv[i] for i in range(sc.n) if sc.feasible[i, j]]
+            keys[j] = sum(nb) / len(nb) if nb else oo.index(j) * (sc.n - 1) / max(sc.m - 1, 1)
+        oo = sorted(oo, key=lambda j: (keys[j], j))
+        po = {j: r for r, j in enumerate(oo)}
+        keys = {}
+        for i in vo:
+            nb = [po[j] for j in range(sc.m) if sc.feasible[i, j]]
+            keys[i] = sum(nb) / len(nb) if nb else vo.index(i) * (sc.m - 1) / max(sc.n - 1, 1)
+        vo = sorted(vo, key=lambda i: (keys[i], i))
+    return vo, oo
+
+
+def arrange(sc, layout):
+    """Karte unverändert; Darstellung "bipartit": Fahrzeuge links, Aufträge rechts, in je einer Spalte. Nur die Koordinaten ändern sich, Kosten und Paare bleiben dieselben."""
+    if layout != "bipartit":
+        return sc
+    vo, oo = _two_sided_order(sc)
+
+    def column(order, x):
+        k = len(order)
+        pos = {e: (x, 100 - 100 * r / (k - 1) if k > 1 else 50) for r, e in enumerate(order)}
+        return tuple(pos[e] for e in range(k))
+
+    return replace(sc, vehicles=column(vo, 0), orders=column(oo, 100))
+
+
+def _small(sc, layout):
+    """Beschriften wir die Ecken? Auf der Karte bis 24 Ecken, in den Spalten bis 20 je Seite."""
+    return max(sc.n, sc.m) <= 20 if layout == "bipartit" else sc.n + sc.m <= 24
+
+
+def _tpos(layout, map_pos, side):
+    """Beschriftungsposition: auf der Karte oben bzw. unten, in den Spalten außen neben der Ecke."""
+    return {"vehicle": "middle left", "order": "middle right"}[side] if layout == "bipartit" else map_pos
 
 
 def _collinear(sc):
@@ -51,7 +97,13 @@ def _feasible_pairs(sc):
     return [(i, j) for i in range(sc.n) for j in range(sc.m) if sc.feasible[i, j]]
 
 
-def _map_layout(fig, sc, height):
+def _map_layout(fig, sc, height, layout="map"):
+    if layout == "bipartit":
+        fig.update_xaxes(visible=False, range=[-32, 132])
+        fig.update_yaxes(visible=False, range=[-6, 116])
+        for x, text in ((0, "Fahrzeuge"), (100, "Aufträge")):
+            fig.add_annotation(x=x, y=110, text=f"<b>{text}</b>", showarrow=False)
+        return _base(fig, max(height, min(800, 22 * max(sc.n, sc.m) + 110)))
     xs = [p[0] for p in sc.vehicles + sc.orders]
     ys = [p[1] for p in sc.vehicles + sc.orders]
     pad = 8
@@ -101,18 +153,19 @@ def _base_edges(fig, sc, curved, pairs, path=None, slack=None):
     return added
 
 
-def build_price_map(sc, pairs, pi_v, pi_o, p_max, path=None, height=430):
+def build_price_map(sc, pairs, pi_v, pi_o, p_max, path=None, height=430, layout="map"):
     """Preise-Sicht: Aufträge nach Preis (Größe und Farbe, freie Aufträge stehen an der Decke P), Fahrzeuge nach Gewinn g = pi; straffe Kanten dunkel."""
-    curved = _collinear(sc)
+    sc = arrange(sc, layout)
+    curved = layout != "bipartit" and _collinear(sc)
     slack = {(i, j): int(sc.cost[i, j]) - (pi_o[j] - pi_v[i]) for i, j in _feasible_pairs(sc)}
     fig = go.Figure()
     _base_edges(fig, sc, curved, pairs, path, slack)
     matched_v = {i for i, _ in pairs}
     matched_o = {j for _, j in pairs}
-    small = sc.n + sc.m <= 24
+    small = _small(sc, layout)
     vmax = max(p_max, 1)
-    for kind, pts, pis, matched, symbol, scale, prefix, tpos in (("Fahrzeug", sc.vehicles, pi_v, matched_v, "square", "Greens", "F", "top center"),
-                                                                  ("Auftrag", sc.orders, pi_o, matched_o, "circle", "Oranges", "A", "bottom center")):
+    for kind, pts, pis, matched, symbol, scale, prefix, tpos in (("Fahrzeug", sc.vehicles, pi_v, matched_v, "square", "Greens", "F", _tpos(layout, "top center", "vehicle")),
+                                                                  ("Auftrag", sc.orders, pi_o, matched_o, "circle", "Oranges", "A", _tpos(layout, "bottom center", "order"))):
         for on in (True, False):
             idx = [k for k in range(len(pts)) if (k in matched) == on]
             if not idx:
@@ -124,20 +177,21 @@ def build_price_map(sc, pairs, pi_v, pi_o, p_max, path=None, height=430):
                 x=[pts[k][0] for k in idx], y=[pts[k][1] for k in idx], mode="markers+text" if small else "markers", name=f"{kind} {'mit' if on else 'ohne'} Partner",
                 text=[f"{prefix}{k + 1}: {pis[k]}" for k in idx] if small else None, textposition=tpos, hovertext=hover, hoverinfo="text",
                 marker=dict(symbol=symbol if on else symbol + "-open", size=_scaled(values, vmax, 9, 20), color=values, colorscale=scale, cmin=0, cmax=vmax, line=dict(width=2, color="#333"))))
-    return _map_layout(fig, sc, height)
+    return _map_layout(fig, sc, height, layout)
 
 
-def build_path_map(sc, pairs, rnd, height=430):
+def build_path_map(sc, pairs, rnd, height=430, layout="map"):
     """Kürzeste-Wege-Sicht: die von der Suche festgelegten Ecken nach Rang eingefärbt (Beschriftung: reduzierter Abstand), Vorgängerbaum, Zielauftrag umringt, Weg grün / rot."""
-    curved = _collinear(sc)
+    sc = arrange(sc, layout)
+    curved = layout != "bipartit" and _collinear(sc)
     fig = go.Figure()
     _base_edges(fig, sc, curved, pairs, rnd.path)
     tx, ty = _segments(sc, [(i, j) for i, j in rnd.tree], curved)
     fig.add_trace(go.Scatter(x=tx, y=ty, mode="lines", line=dict(color="rgba(60,60,60,0.75)", width=1.6, dash="dot"), hoverinfo="skip", name="Vorgängerbaum"))
     rank = {(k, x): (r, d) for k, x, d, r in rnd.settled}
     top = max(len(rnd.settled) - 1, 1)
-    small = sc.n + sc.m <= 24
-    for kind, code, pts, symbol, prefix, tpos in (("Fahrzeug", 1, sc.vehicles, "square", "F", "top center"), ("Auftrag", 0, sc.orders, "circle", "A", "bottom center")):
+    small = _small(sc, layout)
+    for kind, code, pts, symbol, prefix, tpos in (("Fahrzeug", 1, sc.vehicles, "square", "F", _tpos(layout, "top center", "vehicle")), ("Auftrag", 0, sc.orders, "circle", "A", _tpos(layout, "bottom center", "order"))):
         on = [k for k in range(len(pts)) if (code, k) in rank]
         off = [k for k in range(len(pts)) if (code, k) not in rank]
         if off:
@@ -152,20 +206,21 @@ def build_path_map(sc, pairs, rnd, height=430):
     j_end = rnd.path[-1][1]
     fig.add_trace(go.Scatter(x=[sc.orders[j_end][0]], y=[sc.orders[j_end][1]], mode="markers", name=f"Ziel (Abstand {rnd.d_t})", hoverinfo="skip",
                              marker=dict(symbol="circle-open", size=26, color=C.COLORS["drop"], line=dict(width=3, color=C.COLORS["drop"]))))
-    return _map_layout(fig, sc, height)
+    return _map_layout(fig, sc, height, layout)
 
 
-def build_delta_map(sc, pairs, rnd, height=430):
+def build_delta_map(sc, pairs, rnd, height=430, layout="map"):
     """Zustand nach der Runde: gewählte Paare blau, Ecken nach Potenzialanstieg (Beschriftung +Delta)."""
-    curved = _collinear(sc)
+    sc = arrange(sc, layout)
+    curved = layout != "bipartit" and _collinear(sc)
     fig = go.Figure()
     _base_edges(fig, sc, curved, pairs)
     dv = [a - b for a, b in zip(rnd.pi_v_after, rnd.pi_v_before)]
     do = [a - b for a, b in zip(rnd.pi_o_after, rnd.pi_o_before)]
     top = max(max(dv, default=0), max(do, default=0), 1)
-    small = sc.n + sc.m <= 24
-    for kind, pts, delta, symbol, prefix, tpos, matched in (("Fahrzeug", sc.vehicles, dv, "square", "F", "top center", {i for i, _ in pairs}),
-                                                              ("Auftrag", sc.orders, do, "circle", "A", "bottom center", {j for _, j in pairs})):
+    small = _small(sc, layout)
+    for kind, pts, delta, symbol, prefix, tpos, matched in (("Fahrzeug", sc.vehicles, dv, "square", "F", _tpos(layout, "top center", "vehicle"), {i for i, _ in pairs}),
+                                                              ("Auftrag", sc.orders, do, "circle", "A", _tpos(layout, "bottom center", "order"), {j for _, j in pairs})):
         for on in (True, False):
             idx = [k for k in range(len(pts)) if (k in matched) == on]
             if idx:
@@ -173,7 +228,7 @@ def build_delta_map(sc, pairs, rnd, height=430):
                                          text=[f"{prefix}{k + 1}: +{delta[k]}" for k in idx] if small else None, textposition=tpos,
                                          hovertext=[f"{kind} {k + 1}: Potenzial +{delta[k]}" for k in idx], hoverinfo="text",
                                          marker=dict(symbol=symbol if on else symbol + "-open", size=11, color=[delta[k] for k in idx], colorscale="Blues", cmin=0, cmax=top, line=dict(width=2, color="#333"))))
-    return _map_layout(fig, sc, height)
+    return _map_layout(fig, sc, height, layout)
 
 
 def build_marginal(marginal, height=280):

@@ -14,6 +14,8 @@ FIXED_NETS = ("steal", "p4", "paths", "chain")
 
 VIEW_LABELS = {"prices": "Preise", "paths": "Kürzeste Wege"}
 DEFAULT_VIEW = "prices"
+LAYOUT_LABELS = {"map": "Karte", "bipartit": "Zwei Seiten"}
+DEFAULT_LAYOUT = "map"
 
 # --- feste Seed-Mengen (dieselben wie in den Vorgängerdemos; unabhängig vom Nutzer-Seed) --------------------------------------------
 DIST_SEEDS = tuple(range(100000, 100100))
@@ -27,7 +29,7 @@ COLORS = {"matched": "#1f77b4", "add": "#2ca02c", "drop": "#d62728", "common": "
           "tight": "#444444", "hungarian": "#d62728"}
 
 # --- Presets ------------------------------------------------------------------------------------------------------------------
-_BASE = dict(net="random", view=DEFAULT_VIEW, n=DEFAULT_N, m=DEFAULT_M, reach=DEFAULT_REACH, ballung=DEFAULT_BALLUNG, seed=DEFAULT_SEED)
+_BASE = dict(net="random", view=DEFAULT_VIEW, layout=DEFAULT_LAYOUT, n=DEFAULT_N, m=DEFAULT_M, reach=DEFAULT_REACH, ballung=DEFAULT_BALLUNG, seed=DEFAULT_SEED)
 PRESETS = {
     "⚖️ Die billigste Kante klaut": {**_BASE, "net": "steal"},
     "🔗 Pfad aus vier Punkten": {**_BASE, "net": "p4"},
